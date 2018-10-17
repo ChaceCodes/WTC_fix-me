@@ -9,10 +9,11 @@ public class Router
     {
         ServerSocket serverSocketBroker = new ServerSocket(5000);
         Socket socketBroker = serverSocketBroker.accept();
+        System.out.println( "when does this  happen?" );
         InputStreamReader IRBroker = new InputStreamReader(socketBroker.getInputStream());
         BufferedReader BRBroker = new BufferedReader(IRBroker);
-        System.out.println( "Hello World!" );
 
+        while(true){
         String message = BRBroker.readLine();
         System.out.println(message);
 
@@ -20,6 +21,7 @@ public class Router
         {
             PrintStream PSBroker = new PrintStream(socketBroker.getOutputStream());
             PSBroker.println("Message received!");
+        }
         }
     }
 }
