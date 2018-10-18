@@ -17,11 +17,20 @@ public class Router
         String message = BRBroker.readLine();
         System.out.println(message);
 
+        if (message.equalsIgnoreCase("exit")){
+            return;
+        }
         if (message != null)
         {
             PrintStream PSBroker = new PrintStream(socketBroker.getOutputStream());
             PSBroker.println("Message received!");
         }
+
         }
+    }
+
+    private static int validateCheckSum(){
+
+        return(0);
     }
 }
