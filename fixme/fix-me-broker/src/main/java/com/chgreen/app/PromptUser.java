@@ -3,8 +3,13 @@ package com.chgreen.app;
 
 public class PromptUser 
 {
-    private void mainPrompt(){
+    public PromptUser(){
+        return;
+    }
+
+    public static void mainPrompt(){
         System.out.println("Prompt:");
     }
+
 
 }
