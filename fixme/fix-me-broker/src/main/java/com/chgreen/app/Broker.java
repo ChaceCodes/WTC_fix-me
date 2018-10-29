@@ -26,7 +26,7 @@ public class Broker
         Attachment attach = new Attachment();
         attach.channel = channel;
         attach.buffer = ByteBuffer.allocate(2048);
-    //    attach.isRead = false;
+        attach.isRead = true;
         attach.mainThread = Thread.currentThread();
     while (true){
             Charset cs = Charset.forName("UTF-8");

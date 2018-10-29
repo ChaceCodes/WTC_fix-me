@@ -11,20 +11,37 @@ import java.nio.charset.Charset;
 
 public class Router 
 {
+    
     public static void main( String[] args ) throws Exception
     {
+
         AsynchronousServerSocketChannel server = AsynchronousServerSocketChannel
         .open();
         String host = "localhost";
         int portBroker = 5000;
         int portMarket = 5001;
-        InetSocketAddress sAddr = new InetSocketAddress(host, portBroker);       
-        server.bind(sAddr);      
-        System.out.format("Server is listening at %s%n", sAddr);
-        Attachment attach = new Attachment();
-        attach.server = server;
-        server.accept(attach, new ConnectionHandler());
+        InetSocketAddress sAddrBroker = new InetSocketAddress(host, portBroker);       
+        server.bind(sAddrBroker);      
+        System.out.format("Server is listening for Broker at %s%n", sAddrBroker);
+        
+        Attachment attachB = new Attachment();
+        System.out.println("This");
+        attachB.server = server;
+        System.out.println("still");
+        server.accept(attachB, new ConnectionHandler());
         Thread.currentThread().join();
+        System.out.println("works");
+
+        InetSocketAddress sAddrMarket = new InetSocketAddress(host, portMarket);   
+
+        server.bind(sAddrMarket);     
+        System.out.println("This");
+        System.out.format("Server is listening for Market at %s%n", sAddrMarket);
+
+        Attachment attachM = new Attachment();
+        attachM.server = server;
+        server.accept(attachM, new ConnectionHandler());
+        //Thread.currentThread().join();
         
         
         
@@ -72,24 +89,29 @@ class Attachment {
     ByteBuffer buffer;
     SocketAddress clientAddr;
     boolean isRead;
+    int ID;
 }
 
 class ConnectionHandler implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
 
     @Override
     public void completed(AsynchronousSocketChannel client, Attachment attach) {
-        try{
-            SocketAddress clientAddr = client.getRemoteAddress();
-            System.out.format("Accepted a  connection from  %s%n", clientAddr);
-            attach.server.accept(attach, this);
-            ReadWriteHandler rwHandler = new ReadWriteHandler();
-            Attachment newAttach = new Attachment();
-            newAttach.server = attach.server;
-            newAttach.client = client;
-            newAttach.buffer = ByteBuffer.allocate(2048);
-            newAttach.isRead = true;
-            newAttach.clientAddr = clientAddr;
-            client.read(newAttach.buffer, newAttach, rwHandler);            
+        int idCurrent = 1000;
+            try{
+                SocketAddress clientAddr = client.getRemoteAddress();
+                System.out.format("Accepted a  connection from  %s%n", clientAddr);
+                attach.server.accept(attach, this);
+                ReadWriteHandler rwHandler = new ReadWriteHandler();
+                Attachment newAttach = new Attachment();
+                newAttach.server = attach.server;
+                newAttach.client = client;
+                newAttach.buffer = ByteBuffer.allocate(2048);
+                newAttach.isRead = true;
+                newAttach.clientAddr = clientAddr;
+                newAttach.ID = idCurrent;
+                idCurrent++;
+                System.out.println(newAttach.ID + " connected");
+                client.read(newAttach.buffer, newAttach, rwHandler);            
         }
         catch(IOException e){
             e.printStackTrace();
@@ -130,7 +152,7 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment>{
             Charset cs = Charset.forName("UTF-8");
             String msg = new String(bytes, cs);
             System.out.format("Client at  %s  says: %s%n", attach.clientAddr, msg);
-            attach.isRead = false;
+            //attach.isRead = false;
             attach.buffer.rewind();
         }
         else {
