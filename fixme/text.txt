@@ -1,0 +1,23 @@
+ORDER OF THINGS HAPPENING
+|-|-|-|-|-|-|-|-|-|-|-|-|-|-|
+
+START ROUTER ----------------------
+                                    \
+                                    |
+                                    |
+                                    |
+                                    |
+                                    |
+                                    |
+                                    /
+                                 <-
+OPEN CHANNELS AND LISTEN
+
+
+START BROKER/MARKET
+->
+Connect to server
+Read from Server ID
+
+BROKER
+Write to server

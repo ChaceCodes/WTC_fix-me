@@ -111,6 +111,7 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment>{
     public void completed(Integer result, Attachment attach) {
         if (result == -1){
             try{
+                System.out.println("TRY -1 test");
                 attach.client.close();
                 System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
             }
@@ -121,6 +122,7 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment>{
         }
 
         if (attach.isRead){
+            System.out.println("ISREAD TEST");
             attach.buffer.flip();
             int limits = attach.buffer.limit();
             byte[] bytes = new byte[limits];
