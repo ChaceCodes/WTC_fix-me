@@ -40,34 +40,6 @@ public class Broker
             channel.write(attach.buffer, attach, readWriteHandler);
             attach.mainThread.join();         
         }
- 
-        
-        
-        
-        /*PromptUser userPrompt = new PromptUser();
-        Scanner scanner = new Scanner(System.in);
-        Socket sockRouter = new Socket("localhost", 5000);
-        PrintStream PSRouter = new PrintStream(sockRouter.getOutputStream());
-        String input = " ";
-        
-        
-        while (true){
-            userPrompt.mainPrompt();
-            input =  scanner.nextLine();
-            PSRouter.println(input);
-            if (input.equalsIgnoreCase("exit")){
-                sockRouter.close();
-                scanner.close();
-                return;
-            }
-   
-
-            InputStreamReader IRRouter = new InputStreamReader(sockRouter.getInputStream());
-            BufferedReader BRRouter = new BufferedReader(IRRouter);
-
-            String message = BRRouter.readLine();
-            System.out.println(message);
-        }*/
     }
 }
 
@@ -91,7 +63,7 @@ class Attachment {
         String msg = new String(bytes, cs);
         System.out.format("Server Responded: "+ msg);
         try {
-          msg = this.getTextFromUser();
+          msg = this.promptUser();
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -115,7 +87,7 @@ class Attachment {
     public void failed(Throwable e, Attachment attach) {
       e.printStackTrace();
     }
-    private String getTextFromUser() throws Exception{
+    private String promptUser() throws Exception{
       System.out.print("Please enter a  message  (Bye  to quit):");
       BufferedReader consoleReader = new BufferedReader(
           new InputStreamReader(System.in));
