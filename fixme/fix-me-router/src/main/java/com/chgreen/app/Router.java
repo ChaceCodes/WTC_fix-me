@@ -13,11 +13,14 @@ import java.util.ArrayList;
 
 public class Router 
 {
-    private ArrayList<Attachment> routingTable;
+    private static ArrayList<Attachment> routingTable;
     private static int IDcurrent;
+    //private static int index;
     public static void main( String[] args ) throws Exception
     {
         IDcurrent = 1000;
+        routingTable = new ArrayList<Attachment>();
+       //index = 1;
         AsynchronousServerSocketChannel serverBroker = AsynchronousServerSocketChannel.open();
         AsynchronousServerSocketChannel serverMarket = AsynchronousServerSocketChannel.open();
         String host = "localhost";
@@ -34,10 +37,8 @@ public class Router
         System.out.format("Server is listening for Market at %s%n", sAddrMarket);
         Attachment attachB = new Attachment();
         Attachment attachM = new Attachment();
-        System.out.println("This");
         attachB.server = serverBroker;
         attachM.server = serverMarket;
-        System.out.println("still");
         serverBroker.accept(attachB, new ConnectionHandlerB());
         //attachB.ID = IDcurrent++;
         serverMarket.accept(attachM, new ConnectionHandlerM());
@@ -48,149 +49,107 @@ public class Router
         Thread.currentThread().join();
     } 
 
-private static class Attachment {
-    AsynchronousServerSocketChannel server;
-    AsynchronousSocketChannel client;
-    ByteBuffer buffer;
-    SocketAddress clientAddr;
-    boolean isRead;
-    int ID;
-}
-
-private static class ConnectionHandlerB implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
-
-    @Override
-    public void completed(AsynchronousSocketChannel client, Attachment attach) {
-       // int idCurrent = 1000;
-            try{
-                SocketAddress clientAddr = client.getRemoteAddress();
-                System.out.format("Accepted a  connection from  %s%n", clientAddr);
-                attach.server.accept(attach, this);
-                ReadWriteHandlerB rwHandler = new ReadWriteHandlerB();
-                Attachment newAttach = new Attachment();
-                newAttach.server = attach.server;
-                newAttach.client = client;
-                newAttach.buffer = ByteBuffer.allocate(2048);
-                newAttach.isRead = true;
-                newAttach.clientAddr = clientAddr;
-                newAttach.ID = IDcurrent;
-                IDcurrent++;
-                System.out.println(newAttach.ID + " connected");
-                client.read(newAttach.buffer, newAttach, rwHandler);            
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-
+    private static class Attachment {
+        AsynchronousServerSocketChannel server;
+        AsynchronousSocketChannel client;
+        ByteBuffer buffer;
+        SocketAddress clientAddr;
+        boolean isRead;
+        int ID;
     }
 
-    @Override
-    public void failed(Throwable exc, Attachment attachment) {
-            System.out.println("Failed to accept a connection.");
-            exc.printStackTrace();
-    }
+    private static class ConnectionHandlerB implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
 
-}
-
-
-
-private static class ConnectionHandlerM implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
-
-
-    @Override
-    public void completed(AsynchronousSocketChannel client, Attachment attach) {
-        //int idCurrent = 1000;
-            try{
-                SocketAddress clientAddr = client.getRemoteAddress();
-                System.out.format("Accepted a  connection from  %s%n", clientAddr);
-                attach.server.accept(attach, this);
-                ReadWriteHandlerM rwHandler = new ReadWriteHandlerM();
-                Attachment newAttach = new Attachment();
-                newAttach.server = attach.server;
-                newAttach.client = client;
-                newAttach.buffer = ByteBuffer.allocate(2048);
-                newAttach.isRead = true;
-                newAttach.clientAddr = clientAddr;
-                newAttach.ID = IDcurrent;
-                IDcurrent++;
-                System.out.println(newAttach.ID + " connected");
-                client.read(newAttach.buffer, newAttach, rwHandler);            
-        }
-        catch(IOException e){
-            e.printStackTrace();
-        }
-
-    }
-
-    @Override
-    public void failed(Throwable exc, Attachment attachment) {
-            System.out.println("Failed to accept a connection.");
-            exc.printStackTrace();
-    }
-
-}
-
-private static class ReadWriteHandlerB implements CompletionHandler<Integer, Attachment>{
-
-    @Override
-    public void completed(Integer result, Attachment attach) {
-        if (result == -1){
-            try{
-                System.out.println("TRY -1 test");
-                attach.client.close();
-                System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
+        @Override
+        public void completed(AsynchronousSocketChannel client, Attachment attach) {
+                try{
+                    SocketAddress clientAddr = client.getRemoteAddress();
+                    System.out.format("Accepted a  connection from  %s%n", clientAddr);
+                    attach.server.accept(attach, this);
+                    ReadWriteHandlerB rwHandler = new ReadWriteHandlerB();
+                    Attachment newAttach = new Attachment();
+                    newAttach.server = attach.server;
+                    newAttach.client = client;
+                    newAttach.buffer = ByteBuffer.allocate(2048);
+                    newAttach.isRead = true;
+                    newAttach.clientAddr = clientAddr;
+                    newAttach.ID = IDcurrent;
+                    IDcurrent++;
+                    routingTable.add(newAttach);
+                    System.out.println(newAttach.ID + " connected");
+                    client.read(newAttach.buffer, newAttach, rwHandler);            
             }
             catch(IOException e){
                 e.printStackTrace();
             }
-            return;
+
         }
 
-        if (attach.isRead){
-            attach.buffer.flip();
-            int limits = attach.buffer.limit();
-            byte[] bytes = new byte[limits];
-            attach.buffer.get(bytes, 0, limits);
-            Charset cs = Charset.forName("UTF-8");
-            String msg = new String(bytes, cs);
-            System.out.format("Client at  %s  says: %s%n", attach.clientAddr, msg);
-            attach.isRead = false;
-            attach.buffer.rewind();
-            attach.client.write(attach.buffer, attach, this);
-        }
-        else {
-            
-            attach.isRead = true;
-            attach.buffer.clear();
-            attach.client.read(attach.buffer, attach, this);
+        @Override
+        public void failed(Throwable exc, Attachment attachment) {
+                System.out.println("Failed to accept a connection.");
+                exc.printStackTrace();
         }
 
     }
 
-    @Override
-    public void failed(Throwable exc, Attachment attach) {
-            exc.printStackTrace();
+
+
+    private static class ConnectionHandlerM implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
+
+        @Override
+        public void completed(AsynchronousSocketChannel client, Attachment attach) {
+            //int idCurrent = 1000;
+                try{
+                    SocketAddress clientAddr = client.getRemoteAddress();
+                    System.out.format("Accepted a  connection from  %s%n", clientAddr);
+                    attach.server.accept(attach, this);
+                    ReadWriteHandlerM rwHandler = new ReadWriteHandlerM();
+                    Attachment newAttach = new Attachment();
+                    newAttach.server = attach.server;
+                    newAttach.client = client;
+                    newAttach.buffer = ByteBuffer.allocate(2048);
+                    newAttach.isRead = true;
+                    newAttach.clientAddr = clientAddr;
+                    newAttach.ID = IDcurrent;
+                    IDcurrent++;
+                    routingTable.add(newAttach);
+                    System.out.println(newAttach.ID + " connected");
+                   // System.out.println(routingTable.toString());
+                    client.read(newAttach.buffer, newAttach, rwHandler);            
+            }
+            catch(IOException e){
+                e.printStackTrace();
+            }
+
+        }
+
+        @Override
+        public void failed(Throwable exc, Attachment attachment) {
+                System.out.println("Failed to accept a connection.");
+                exc.printStackTrace();
+        }
+
     }
-}
- 
-private static class ReadWriteHandlerM implements CompletionHandler<Integer, Attachment>{
+
+    private static class ReadWriteHandlerB implements CompletionHandler<Integer, Attachment>{
 
         @Override
         public void completed(Integer result, Attachment attach) {
             if (result == -1){
                 try{
-                    System.out.println("TRY -1 test");
+                    routingTable.remove(routingTable.indexOf(attach));
                     attach.client.close();
                     System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
+                    
                 }
                 catch(IOException e){
                     e.printStackTrace();
                 }
                 return;
             }
-    
+
             if (attach.isRead){
-                System.out.println("ISREAD TEST");
                 attach.buffer.flip();
                 int limits = attach.buffer.limit();
                 byte[] bytes = new byte[limits];
@@ -198,23 +157,67 @@ private static class ReadWriteHandlerM implements CompletionHandler<Integer, Att
                 Charset cs = Charset.forName("UTF-8");
                 String msg = new String(bytes, cs);
                 System.out.format("Client at  %s  says: %s%n", attach.clientAddr, msg);
-                //attach.isRead = false;
+                attach.isRead = false;
                 attach.buffer.rewind();
+                attach.client.write(attach.buffer, attach, this);
             }
             else {
-                attach.client.write(attach.buffer, attach, this);
+                
                 attach.isRead = true;
                 attach.buffer.clear();
                 attach.client.read(attach.buffer, attach, this);
             }
-    
+
         }
-    
+
         @Override
         public void failed(Throwable exc, Attachment attach) {
                 exc.printStackTrace();
         }
+    }
+    
+    private static class ReadWriteHandlerM implements CompletionHandler<Integer, Attachment>{
 
-}
+            @Override
+            public void completed(Integer result, Attachment attach) {
+                if (result == -1){
+                    try{
+                        System.out.println("TRY -1 test");
+                        attach.client.close();
+                        System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
+                    }
+                    catch(IOException e){
+                        e.printStackTrace();
+                    }
+                    return;
+                }
+        
+                if (attach.isRead){
+                    System.out.println("ISREAD TEST");
+                    attach.buffer.flip();
+                    int limits = attach.buffer.limit();
+                    byte[] bytes = new byte[limits];
+                    attach.buffer.get(bytes, 0, limits);
+                    Charset cs = Charset.forName("UTF-8");
+                    String msg = new String(bytes, cs);
+                    System.out.format("Client at  %s  says: %s%n", attach.clientAddr, msg);
+                    //attach.isRead = false;
+                    attach.buffer.rewind();
+                }
+                else {
+                    attach.client.write(attach.buffer, attach, this);
+                    attach.isRead = true;
+                    attach.buffer.clear();
+                    attach.client.read(attach.buffer, attach, this);
+                }
+        
+            }
+        
+            @Override
+            public void failed(Throwable exc, Attachment attach) {
+                    exc.printStackTrace();
+            }
+
+    }
 
 }

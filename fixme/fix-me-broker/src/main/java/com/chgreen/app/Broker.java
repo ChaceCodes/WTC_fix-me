@@ -8,16 +8,16 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
-import java.util.Scanner;
+//import java.util.Scanner;
 import java.util.concurrent.Future;
-//import com.chgreen.app.PromptUser;
+import com.chgreen.app.PromptUser;
 
 public class Broker 
 {
     
     public static void main( String[] args ) throws Exception
     {
-        Scanner scanner = new Scanner(System.in);
+        //Scanner scanner = new Scanner(System.in);
         AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
         SocketAddress serverAddr = new InetSocketAddress("localhost", 5000);
         Future<Void> result = channel.connect(serverAddr);
@@ -30,7 +30,7 @@ public class Broker
         attach.mainThread = Thread.currentThread();
     while (true){
             Charset cs = Charset.forName("UTF-8");
-            String msg = scanner.nextLine();
+            String msg = PromptUser.mainPrompt();
             byte[] data = msg.getBytes(cs);
             attach.buffer.put(data);
             attach.buffer.flip();
