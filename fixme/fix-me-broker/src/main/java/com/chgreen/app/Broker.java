@@ -88,7 +88,7 @@ class Attachment {
       e.printStackTrace();
     }
     private String promptUser() throws Exception{
-      System.out.print("Please enter a  message  (Bye  to quit):");
+      System.out.print("\nPlease enter a  message  (Bye  to quit):");
       BufferedReader consoleReader = new BufferedReader(
           new InputStreamReader(System.in));
       String msg = consoleReader.readLine();

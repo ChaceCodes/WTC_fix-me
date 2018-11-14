@@ -39,7 +39,7 @@ public class PromptUser
         tmp = scanner.nextLine();
         fixMsg = fixMsg + "|" + tmp;
 
-
+        tmp = "";
         System.out.println("Price:");
         while (!(isNumeric(tmp)))
         {

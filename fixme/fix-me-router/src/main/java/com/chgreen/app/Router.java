@@ -156,13 +156,12 @@ public class Router
                 attach.buffer.get(bytes, 0, limits);
                 Charset cs = Charset.forName("UTF-8");
                 String msg = new String(bytes, cs);
-                System.out.format("Client at  %s  says: %s%n", attach.clientAddr, msg);
+                System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
                 attach.isRead = false;
                 attach.buffer.rewind();
                 attach.client.write(attach.buffer, attach, this);
             }
             else {
-                
                 attach.isRead = true;
                 attach.buffer.clear();
                 attach.client.read(attach.buffer, attach, this);
@@ -182,7 +181,7 @@ public class Router
             public void completed(Integer result, Attachment attach) {
                 if (result == -1){
                     try{
-                        System.out.println("TRY -1 test");
+                        routingTable.remove(routingTable.indexOf(attach));
                         attach.client.close();
                         System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
                     }
@@ -193,19 +192,18 @@ public class Router
                 }
         
                 if (attach.isRead){
-                    System.out.println("ISREAD TEST");
                     attach.buffer.flip();
                     int limits = attach.buffer.limit();
                     byte[] bytes = new byte[limits];
                     attach.buffer.get(bytes, 0, limits);
                     Charset cs = Charset.forName("UTF-8");
                     String msg = new String(bytes, cs);
-                    System.out.format("Client at  %s  says: %s%n", attach.clientAddr, msg);
-                    //attach.isRead = false;
+                    System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
+                    attach.isRead = false;
                     attach.buffer.rewind();
+                    attach.client.write(attach.buffer, attach, this);
                 }
                 else {
-                    attach.client.write(attach.buffer, attach, this);
                     attach.isRead = true;
                     attach.buffer.clear();
                     attach.client.read(attach.buffer, attach, this);
