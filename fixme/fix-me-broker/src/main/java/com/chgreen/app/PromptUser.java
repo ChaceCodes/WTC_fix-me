@@ -57,6 +57,7 @@ public class PromptUser
         fixMsg = fixMsg + "|" + tmp;
 
         for (int i = 0; i < fixMsg.length(); i++){
+            System.out.println(checksm);
             checksm += fixMsg.charAt(i);
         }
         fixMsg = fixMsg + "|" + checksm;

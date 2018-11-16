@@ -1,26 +1,36 @@
 package com.chgreen.app;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.Channel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 
 
 public class Router 
 {
+    /*Private variables  used throughout class
+     /routingTable: list of attachments to locat ID and address for message forwarding
+     /IDcurrent: Keeps track of connections to ensure a unique ID is given to each attachment
+    */
     private static ArrayList<Attachment> routingTable;
     private static int IDcurrent;
-    //private static int index;
+
+    /*
+    /
+    */
     public static void main( String[] args ) throws Exception
     {
         IDcurrent = 1000;
         routingTable = new ArrayList<Attachment>();
-       //index = 1;
         AsynchronousServerSocketChannel serverBroker = AsynchronousServerSocketChannel.open();
         AsynchronousServerSocketChannel serverMarket = AsynchronousServerSocketChannel.open();
         String host = "localhost";
@@ -40,14 +50,14 @@ public class Router
         attachB.server = serverBroker;
         attachM.server = serverMarket;
         serverBroker.accept(attachB, new ConnectionHandlerB());
-        //attachB.ID = IDcurrent++;
         serverMarket.accept(attachM, new ConnectionHandlerM());
-        //attachM.ID = IDcurrent++;
-
-        // System.out.println(attachB.ID);
-        // System.out.println(attachM.ID); 
         Thread.currentThread().join();
     } 
+
+
+    /*
+    / Attachment struct to store data of new attachments
+    */
 
     private static class Attachment {
         AsynchronousServerSocketChannel server;
@@ -55,8 +65,14 @@ public class Router
         ByteBuffer buffer;
         SocketAddress clientAddr;
         boolean isRead;
+        //BoM 1 if Market 0 if Broker
+        int BoM;
         int ID;
     }
+
+    /*
+    / ConnectionHandler(s): Take on new connections and assign nescessary data to Attachment class and routingTable
+    */
 
     private static class ConnectionHandlerB implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
 
@@ -74,10 +90,11 @@ public class Router
                     newAttach.isRead = true;
                     newAttach.clientAddr = clientAddr;
                     newAttach.ID = IDcurrent;
+                    newAttach.BoM = 0;
                     IDcurrent++;
                     routingTable.add(newAttach);
                     System.out.println(newAttach.ID + " connected");
-                    client.read(newAttach.buffer, newAttach, rwHandler);            
+                    client.read(newAttach.buffer, newAttach, rwHandler);   
             }
             catch(IOException e){
                 e.printStackTrace();
@@ -92,7 +109,6 @@ public class Router
         }
 
     }
-
 
 
     private static class ConnectionHandlerM implements CompletionHandler<AsynchronousSocketChannel, Attachment>{
@@ -112,6 +128,7 @@ public class Router
                     newAttach.isRead = true;
                     newAttach.clientAddr = clientAddr;
                     newAttach.ID = IDcurrent;
+                    newAttach.BoM = 1;
                     IDcurrent++;
                     routingTable.add(newAttach);
                     System.out.println(newAttach.ID + " connected");
@@ -132,15 +149,108 @@ public class Router
 
     }
 
+    /*
+    / processMsg(String msg): returns: -1 if invalid else ID in FIX_Message as an int
+
+    */
+
+    private static int processMsg(String msg){
+        int ID;
+        ID = 0;
+        String tmp;
+        List<Character> buff = new ArrayList<Character>();
+        List<Character> buffCheck = new ArrayList<Character>();
+        int i = 0;
+        int checkSum = 0;
+        char c;
+        int checkCheck = 0;
+
+        c = msg.charAt(i);
+        i++;
+
+
+        while ((c != '|')){
+            buff.add(c);
+            
+            c = msg.charAt(i);
+            i++;
+        }
+
+		StringBuilder sb = new StringBuilder();
+		for (Character ch: buff) {
+			sb.append(ch);
+		}
+		tmp = sb.toString();
+        ID = Integer.parseInt(tmp);
+        System.out.println(ID);
+
+        buff.add(c);  
+        c = msg.charAt(i);
+        i++;
+        
+        
+        for (int j = 0; j < 4; j++) {
+            while ((c != '|')){
+                buff.add(c);                
+                c = msg.charAt(i);
+                i++;
+            }
+            buff.add(c);  
+            c = msg.charAt(i);
+            i++;
+        }
+
+
+        while ((i < msg.length())){
+            buffCheck.add(c);
+            c = msg.charAt(i);
+            i++;
+        }
+
+        buffCheck.add(c);
+        System.out.println(buffCheck.toString());
+        
+        
+        StringBuilder sbCheck = new StringBuilder();
+		for (Character ch: buffCheck) {
+		sbCheck.append(ch);
+		}
+		tmp = sbCheck.toString();
+        checkSum = Integer.parseInt(tmp);
+        
+
+        System.out.println(checkSum);
+
+        for (int k = 0; k < msg.length() - (buffCheck.size() + 1); k++){
+            System.out.println("Checkc = " + checkCheck);
+            checkCheck += msg.charAt(k);
+        }
+
+        if (checkCheck == checkSum){
+            System.out.println(checkCheck + " " + checkSum);
+            return ID;
+        }
+        else
+        {
+            System.out.println("invalid :" + checkCheck);
+            return(-1);
+        }
+    }
+
+    /*
+    / ReadWriteHandler(s): 
+    */
+
     private static class ReadWriteHandlerB implements CompletionHandler<Integer, Attachment>{
 
         @Override
         public void completed(Integer result, Attachment attach) {
+            Attachment sendAttach = new Attachment();
             if (result == -1){
                 try{
                     routingTable.remove(routingTable.indexOf(attach));
                     attach.client.close();
-                    System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
+                    System.out.format("Stopped   listening to the   client %s%n%d",attach.clientAddr, attach.ID);
                     
                 }
                 catch(IOException e){
@@ -156,10 +266,14 @@ public class Router
                 attach.buffer.get(bytes, 0, limits);
                 Charset cs = Charset.forName("UTF-8");
                 String msg = new String(bytes, cs);
+                processMsg(msg);
+
                 System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
+                // currentattach = findAttach{}
                 attach.isRead = false;
                 attach.buffer.rewind();
                 attach.client.write(attach.buffer, attach, this);
+                //if write to different attach will forwarding be working?
             }
             else {
                 attach.isRead = true;
@@ -179,11 +293,12 @@ public class Router
 
             @Override
             public void completed(Integer result, Attachment attach) {
+                Attachment sendAttach = new Attachment();
                 if (result == -1){
                     try{
                         routingTable.remove(routingTable.indexOf(attach));
                         attach.client.close();
-                        System.out.format("Stopped   listening to the   client %s%n",attach.clientAddr);
+                        System.out.format("Stopped   listening to the   client %s%n%d",attach.clientAddr, attach.ID);
                     }
                     catch(IOException e){
                         e.printStackTrace();
@@ -198,6 +313,8 @@ public class Router
                     attach.buffer.get(bytes, 0, limits);
                     Charset cs = Charset.forName("UTF-8");
                     String msg = new String(bytes, cs);
+                    processMsg(msg);
+                    
                     System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
                     attach.isRead = false;
                     attach.buffer.rewind();
