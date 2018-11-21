@@ -13,7 +13,7 @@ public class PromptUser
         String fixMsg = "";
         String tmp = "";
         int checksm = 0;
-        System.out.println("Market ID:");
+        System.out.println("\nMarket ID:");
         while (!(isNumeric(tmp)))
         {
             tmp = scanner.nextLine();
@@ -21,12 +21,12 @@ public class PromptUser
         fixMsg = tmp;
 
         tmp = "";
-        System.out.println("1. Buy\n2. Sell");
+        System.out.println("\n1. Buy\n2. Sell");
         while (!(isNumeric(tmp)) || !(tmp.equals("1")) && !(tmp.equals("2")))
         {
         tmp = scanner.nextLine();
         }
-        //validate in 
+
         if (tmp.equals("1")){
         fixMsg = fixMsg + "|buy";
         }
@@ -35,12 +35,12 @@ public class PromptUser
         }
 
 
-        System.out.println("Instrument:");
+        System.out.println("\nInstrument:");
         tmp = scanner.nextLine();
         fixMsg = fixMsg + "|" + tmp;
 
         tmp = "";
-        System.out.println("Price:");
+        System.out.println("\nPrice:");
         while (!(isNumeric(tmp)))
         {
             tmp = scanner.nextLine();
@@ -48,16 +48,16 @@ public class PromptUser
         fixMsg = fixMsg + "|" + tmp;
 
         tmp = "";
-        System.out.println("Quantity:");
+        System.out.println("\nQuantity:");
         while (!(isNumeric(tmp)))
         {
             tmp = scanner.nextLine();
         }
-        //validate in 
+        
         fixMsg = fixMsg + "|" + tmp;
 
         for (int i = 0; i < fixMsg.length(); i++){
-            System.out.println(checksm);
+            //System.out.println(checksm);
             checksm += fixMsg.charAt(i);
         }
         fixMsg = fixMsg + "|" + checksm;

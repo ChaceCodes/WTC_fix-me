@@ -14,7 +14,6 @@ import com.chgreen.app.PromptUser;
 
 public class Broker 
 {
-    
     public static void main( String[] args ) throws Exception
     {
         //Scanner scanner = new Scanner(System.in);
@@ -63,7 +62,7 @@ class Attachment {
         String msg = new String(bytes, cs);
         System.out.format("Server Responded: "+ msg);
         try {
-          msg = this.promptUser();
+          msg = PromptUser.mainPrompt();
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -75,7 +74,7 @@ class Attachment {
         byte[] data = msg.getBytes(cs);
         attach.buffer.put(data);
         attach.buffer.flip();
-        attach.isRead = false; // It is a write
+        attach.isRead = true; // It is a write
         attach.channel.write(attach.buffer, attach, this);
       }else {
         attach.isRead = true;

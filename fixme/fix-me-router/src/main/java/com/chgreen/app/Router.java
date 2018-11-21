@@ -94,7 +94,7 @@ public class Router
                     IDcurrent++;
                     routingTable.add(newAttach);
                     System.out.println(newAttach.ID + " connected");
-                    client.read(newAttach.buffer, newAttach, rwHandler);   
+                    client.read(newAttach.buffer, newAttach, rwHandler);
             }
             catch(IOException e){
                 e.printStackTrace();
@@ -222,12 +222,12 @@ public class Router
         System.out.println(checkSum);
 
         for (int k = 0; k < msg.length() - (buffCheck.size() + 1); k++){
-            System.out.println("Checkc = " + checkCheck);
+           // System.out.println("Checkc = " + checkCheck);
             checkCheck += msg.charAt(k);
         }
 
         if (checkCheck == checkSum){
-            System.out.println(checkCheck + " " + checkSum);
+            //System.out.println(checkCheck + " " + checkSum);
             return ID;
         }
         else

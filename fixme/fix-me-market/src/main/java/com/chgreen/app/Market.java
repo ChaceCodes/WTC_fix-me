@@ -28,6 +28,7 @@ public class Market
         attach.buffer = ByteBuffer.allocate(2048);
         attach.isRead = true;
         attach.mainThread = Thread.currentThread();
+        scanner.close();
     while (true){
             Charset cs = Charset.forName("UTF-8");
             String msg = scanner.nextLine();
@@ -40,34 +41,6 @@ public class Market
             channel.write(attach.buffer, attach, readWriteHandler);
             attach.mainThread.join();         
         }
- 
-        
-        
-        
-        /*PromptUser userPrompt = new PromptUser();
-        Scanner scanner = new Scanner(System.in);
-        Socket sockRouter = new Socket("localhost", 5000);
-        PrintStream PSRouter = new PrintStream(sockRouter.getOutputStream());
-        String input = " ";
-        
-        
-        while (true){
-            userPrompt.mainPrompt();
-            input =  scanner.nextLine();
-            PSRouter.println(input);
-            if (input.equalsIgnoreCase("exit")){
-                sockRouter.close();
-                scanner.close();
-                return;
-            }
-   
-
-            InputStreamReader IRRouter = new InputStreamReader(sockRouter.getInputStream());
-            BufferedReader BRRouter = new BufferedReader(IRRouter);
-
-            String message = BRRouter.readLine();
-            System.out.println(message);
-        }*/
     }
 }
 
@@ -91,7 +64,7 @@ class Attachment {
         String msg = new String(bytes, cs);
         System.out.format("Server Responded: "+ msg);
         try {
-          msg = this.getTextFromUser();
+          return;
         } catch (Exception e) {
           e.printStackTrace();
         }
