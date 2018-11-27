@@ -245,7 +245,7 @@ public class Router
 
         @Override
         public void completed(Integer result, Attachment attach) {
-            Attachment sendAttach = new Attachment();
+            //Attachment sendAttach = new Attachment();
             if (result == -1){
                 try{
                     routingTable.remove(routingTable.indexOf(attach));
