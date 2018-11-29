@@ -1,7 +1,7 @@
 package com.chgreen.app;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+// import java.io.BufferedReader;
+// import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -15,6 +15,7 @@ public class Broker
 {
     public static void main( String[] args ) throws Exception
     {
+      try{
         //Scanner scanner = new Scanner(System.in);
         AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
         SocketAddress serverAddr = new InetSocketAddress("localhost", 5000);
@@ -28,7 +29,13 @@ public class Broker
         attach.mainThread = Thread.currentThread();
         ReadWriteHandler readWriteHandler = new ReadWriteHandler();
         channel.read(attach.buffer, attach, readWriteHandler);
-        attach.mainThread.join();         
+        attach.mainThread.join();
+        if (attach.mainThread.isInterrupted()){
+          return;
+        }
+      }catch(Exception e){
+        System.out.println("Router Unavailable");
+      }         
     }
 }
 
@@ -41,10 +48,10 @@ class Attachment {
   }
 
 
-  
-  class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
+
+  class ReadWriteHandler implements CompletionHandler<Integer, Attachment>{
     @Override
-    public void completed(Integer result, Attachment attach) {
+    public void completed(Integer result, Attachment attach){
       if (attach.isRead) {
         attach.buffer.flip();
         Charset cs = Charset.forName("UTF-8");
@@ -62,15 +69,16 @@ class Attachment {
         }
         try {
           msg = PromptUser.mainPrompt(attach.id);
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+        
         attach.buffer.clear();
         byte[] data = msg.getBytes(cs);
         attach.buffer.put(data);
         attach.buffer.flip();
         attach.isRead = false; // It is a write
         attach.channel.write(attach.buffer, attach, this);
+      } catch (Exception e) {
+        System.out.println("Router hung up");
+      }
       }else {
         attach.isRead = true;
         attach.buffer.clear();

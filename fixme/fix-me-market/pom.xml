@@ -19,6 +19,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <dependencies>
+    <dependency>
+      <groupId>org.json</groupId>
+      <artifactId>json</artifactId>
+      <version>20180813</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -33,11 +38,33 @@
         </configuration>
       </plugin>
       <plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<version>3.1.1</version>
+				<executions>
+					<execution>
+						<id>copy-dependencies</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>copy-dependencies</goal>
+						</goals>
+						<configuration>
+							<outputDirectory>${project.build.directory}/dependency</outputDirectory>
+							<overWriteReleases>false</overWriteReleases>
+							<overWriteSnapshots>false</overWriteSnapshots>
+							<overWriteIfNewer>true</overWriteIfNewer>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+      <plugin>
 				<artifactId>maven-jar-plugin</artifactId>
 				<version>3.0.2</version>
 				<configuration>
 					<archive>
 						<manifest>
+              <addClasspath>true</addClasspath>
+							<classpathPrefix>dependency/</classpathPrefix>
 							<mainClass>com.chgreen.app.Market</mainClass>
 						</manifest>
 					</archive>

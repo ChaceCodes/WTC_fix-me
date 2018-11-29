@@ -34,7 +34,8 @@ public class PromptUser
             fixMsg = fixMsg + "|sell";
         }
 
-
+        fixMsg = fixMsg + "|rejected";
+        
         System.out.println("\nInstrument:");
         tmp = scanner.nextLine();
         fixMsg = fixMsg + "|" + tmp;

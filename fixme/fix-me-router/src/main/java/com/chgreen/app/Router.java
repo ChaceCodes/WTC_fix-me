@@ -53,6 +53,9 @@ public class Router
         serverBroker.accept(attachB, new ConnectionHandlerB());
         serverMarket.accept(attachM, new ConnectionHandlerM());
         Thread.currentThread().join();
+        if (Thread.currentThread().isInterrupted()){
+            return;
+        }
     } 
 
     private static Attachment getAttach(int ID){
@@ -93,7 +96,7 @@ public class Router
                     SocketAddress clientAddr = client.getRemoteAddress();
                     System.out.format("Accepted a  connection from  %s%n", clientAddr);
                     attach.server.accept(attach, this);
-                    ReadWriteHandlerB rwHandler = new ReadWriteHandlerB();
+                    ReadWriteHandler rwHandler = new ReadWriteHandler();
                     Attachment newAttach = new Attachment();
 
                     newAttach.server = attach.server;
@@ -141,7 +144,7 @@ public class Router
                     SocketAddress clientAddr = client.getRemoteAddress();
                     System.out.format("Accepted a  connection from  %s%n", clientAddr);
                     attach.server.accept(attach, this);
-                    ReadWriteHandlerM rwHandler = new ReadWriteHandlerM();
+                    //ReadWriteHandler rwHandler = new ReadWriteHandler();
                     Attachment newAttach = new Attachment();
 
 
@@ -191,8 +194,8 @@ public class Router
         String tmp;
         String[] splitArray = msg.split("\\|");
         ID = Integer.parseInt(splitArray[0]);
-        Checksum = Integer.parseInt(splitArray[6]);
-        System.out.println(Checksum);
+        Checksum = Integer.parseInt(splitArray[7]);
+        //System.out.println(Checksum);
         
         for (int i = 0; i < splitArray.length - 1; i++)
         {
@@ -214,7 +217,7 @@ public class Router
     / ReadWriteHandler(s): 
     */
 
-    private static class ReadWriteHandlerB implements CompletionHandler<Integer, Attachment>{
+    private static class ReadWriteHandler implements CompletionHandler<Integer, Attachment>{
 
         @Override
         public void completed(Integer result, Attachment attach) {
@@ -223,7 +226,7 @@ public class Router
                 try{
                     routingTable.remove(routingTable.indexOf(attach));
                     attach.client.close();
-                    System.out.format("Stopped   listening to the   client %s%n%d",attach.clientAddr, attach.ID);
+                    System.out.format("Stopped   listening to the   client %s:%d",attach.clientAddr, attach.ID);
                     
                 }
                 catch(IOException e){
@@ -249,12 +252,9 @@ public class Router
                 else {
                     Attachment sendAttach = getAttach(id);
 
-                    if (sendAttach.ID == 0 /*|| sendAttach.BoM == 0*/){
+                    if (sendAttach.ID == 0 || (sendAttach.BoM == 0 && attach.BoM == 0) || (sendAttach.BoM == 1 && attach.BoM == 1)){
                         sendAttach = attach;
                     } 
-                    else {
-                        System.out.println("sID :" + sendAttach.ID);
-                    }
                     System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
                     System.out.format("Client at  %s:%d  says: %s%n", sendAttach.clientAddr, sendAttach.ID, msg);
                     sendAttach.buffer.clear();
@@ -283,51 +283,4 @@ public class Router
                 exc.printStackTrace();
         }
     }
-    
-    private static class ReadWriteHandlerM implements CompletionHandler<Integer, Attachment>{
-
-            @Override
-            public void completed(Integer result, Attachment attach) {
-               // Attachment sendAttach = new Attachment();
-                if (result == -1){
-                    try{
-                        routingTable.remove(routingTable.indexOf(attach));
-                        attach.client.close();
-                        System.out.format("Stopped   listening to the   client %s%n%d",attach.clientAddr, attach.ID);
-                    }
-                    catch(IOException e){
-                        e.printStackTrace();
-                    }
-                    return;
-                }
-        
-                if (attach.isRead){
-                    attach.buffer.flip();
-                    int limits = attach.buffer.limit();
-                    byte[] bytes = new byte[limits];
-                    attach.buffer.get(bytes, 0, limits);
-                    Charset cs = Charset.forName("UTF-8");
-                    String msg = new String(bytes, cs);
-                    //processMsg(msg);
-                    
-                    System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
-                    attach.isRead = false;
-                    attach.buffer.rewind();
-                    attach.client.write(attach.buffer, attach, this);
-                }
-                else {
-                    attach.isRead = true;
-                    attach.buffer.clear();
-                    attach.client.read(attach.buffer, attach, this);
-                }
-        
-            }
-        
-            @Override
-            public void failed(Throwable exc, Attachment attach) {
-                    exc.printStackTrace();
-            }
-
-    }
-
 }
