@@ -9,7 +9,7 @@ public class PromptUser
         return;
     }
 
-    public static String mainPrompt(){
+    public static String mainPrompt(int ID){
         String fixMsg = "";
         String tmp = "";
         int checksm = 0;
@@ -19,7 +19,7 @@ public class PromptUser
             tmp = scanner.nextLine();
         }
         fixMsg = tmp;
-
+        fixMsg = fixMsg + "|" + ID;
         tmp = "";
         System.out.println("\n1. Buy\n2. Sell");
         while (!(isNumeric(tmp)) || !(tmp.equals("1")) && !(tmp.equals("2")))
@@ -67,14 +67,12 @@ public class PromptUser
 
 private static boolean isNumeric(String str)  
 {  
-  try  
-  {  
+  try{  
     double d = Double.parseDouble(str);  
-  }  
-  catch(NumberFormatException nfe)  
-  {  
+  }catch(NumberFormatException nfe){  
     return false;  
-  }  
+  }
+  
   return true;  
 }
 

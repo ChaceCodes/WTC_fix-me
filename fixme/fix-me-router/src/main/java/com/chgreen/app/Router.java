@@ -4,6 +4,7 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.Channel;
@@ -54,6 +55,16 @@ public class Router
         Thread.currentThread().join();
     } 
 
+    private static Attachment getAttach(int ID){
+        for (int i = 0; i < routingTable.size(); i++)
+        {
+            if (routingTable.get(i).ID == ID){
+                return (routingTable.get(i));
+            }
+        }
+        return new Attachment();
+    }
+
 
     /*
     / Attachment struct to store data of new attachments
@@ -84,17 +95,27 @@ public class Router
                     attach.server.accept(attach, this);
                     ReadWriteHandlerB rwHandler = new ReadWriteHandlerB();
                     Attachment newAttach = new Attachment();
+
                     newAttach.server = attach.server;
                     newAttach.client = client;
                     newAttach.buffer = ByteBuffer.allocate(2048);
-                    newAttach.isRead = true;
+                    newAttach.isRead = false;
                     newAttach.clientAddr = clientAddr;
                     newAttach.ID = IDcurrent;
                     newAttach.BoM = 0;
+
                     IDcurrent++;
                     routingTable.add(newAttach);
                     System.out.println(newAttach.ID + " connected");
-                    client.read(newAttach.buffer, newAttach, rwHandler);
+                    CharBuffer cbuf = newAttach.buffer.asCharBuffer();
+                    cbuf.put("ID:"+ newAttach.ID);
+                    cbuf.flip();
+
+
+                    newAttach.client.write(newAttach.buffer);
+                    newAttach.client.read(newAttach.buffer, newAttach, rwHandler);
+
+
             }
             catch(IOException e){
                 e.printStackTrace();
@@ -122,6 +143,8 @@ public class Router
                     attach.server.accept(attach, this);
                     ReadWriteHandlerM rwHandler = new ReadWriteHandlerM();
                     Attachment newAttach = new Attachment();
+
+
                     newAttach.server = attach.server;
                     newAttach.client = client;
                     newAttach.buffer = ByteBuffer.allocate(2048);
@@ -129,11 +152,17 @@ public class Router
                     newAttach.clientAddr = clientAddr;
                     newAttach.ID = IDcurrent;
                     newAttach.BoM = 1;
+
+
                     IDcurrent++;
                     routingTable.add(newAttach);
                     System.out.println(newAttach.ID + " connected");
-                   // System.out.println(routingTable.toString());
-                    client.read(newAttach.buffer, newAttach, rwHandler);            
+                    CharBuffer cbuf = newAttach.buffer.asCharBuffer();
+                    cbuf.put("ID:"+ newAttach.ID);
+                    cbuf.flip();
+
+                    newAttach.client.write(newAttach.buffer);
+                    //newAttach.client.read(newAttach.buffer, newAttach, rwHandler);           
             }
             catch(IOException e){
                 e.printStackTrace();
@@ -157,84 +186,28 @@ public class Router
     private static int processMsg(String msg){
         int ID;
         ID = 0;
+        int newCheck = 0;
+        int Checksum;
         String tmp;
-        List<Character> buff = new ArrayList<Character>();
-        List<Character> buffCheck = new ArrayList<Character>();
-        int i = 0;
-        int checkSum = 0;
-        char c;
-        int checkCheck = 0;
-
-        c = msg.charAt(i);
-        i++;
-
-
-        while ((c != '|')){
-            buff.add(c);
-            
-            c = msg.charAt(i);
-            i++;
-        }
-
-		StringBuilder sb = new StringBuilder();
-		for (Character ch: buff) {
-			sb.append(ch);
-		}
-		tmp = sb.toString();
-        ID = Integer.parseInt(tmp);
-        System.out.println(ID);
-
-        buff.add(c);  
-        c = msg.charAt(i);
-        i++;
+        String[] splitArray = msg.split("\\|");
+        ID = Integer.parseInt(splitArray[0]);
+        Checksum = Integer.parseInt(splitArray[6]);
+        System.out.println(Checksum);
         
-        
-        for (int j = 0; j < 4; j++) {
-            while ((c != '|')){
-                buff.add(c);                
-                c = msg.charAt(i);
-                i++;
-            }
-            buff.add(c);  
-            c = msg.charAt(i);
-            i++;
-        }
-
-
-        while ((i < msg.length())){
-            buffCheck.add(c);
-            c = msg.charAt(i);
-            i++;
-        }
-
-        buffCheck.add(c);
-        System.out.println(buffCheck.toString());
-        
-        
-        StringBuilder sbCheck = new StringBuilder();
-		for (Character ch: buffCheck) {
-		sbCheck.append(ch);
-		}
-		tmp = sbCheck.toString();
-        checkSum = Integer.parseInt(tmp);
-        
-
-        System.out.println(checkSum);
-
-        for (int k = 0; k < msg.length() - (buffCheck.size() + 1); k++){
-           // System.out.println("Checkc = " + checkCheck);
-            checkCheck += msg.charAt(k);
-        }
-
-        if (checkCheck == checkSum){
-            //System.out.println(checkCheck + " " + checkSum);
-            return ID;
-        }
-        else
+        for (int i = 0; i < splitArray.length - 1; i++)
         {
-            System.out.println("invalid :" + checkCheck);
-            return(-1);
+            for (int j = 0; j < splitArray[i].length(); j++){
+                newCheck += splitArray[i].charAt(j);
+            }
+            newCheck += '|';
         }
+        newCheck -= '|';
+        if (Checksum == newCheck){
+            return (ID);
+        }
+        
+        return (-1);
+
     }
 
     /*
@@ -266,14 +239,36 @@ public class Router
                 attach.buffer.get(bytes, 0, limits);
                 Charset cs = Charset.forName("UTF-8");
                 String msg = new String(bytes, cs);
-                processMsg(msg);
+                int id = processMsg(msg);
+                
+                //processMsg returns -1 if anything doesn't check out which will result in an invalid checksum
+                if (id == -1){
+                    System.out.println("Checksum is invalid");
+                    attach.isRead = false;
+                }
+                else {
+                    Attachment sendAttach = getAttach(id);
 
-                System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
-                // currentattach = findAttach{}
-                attach.isRead = false;
-                attach.buffer.rewind();
-                attach.client.write(attach.buffer, attach, this);
-                //if write to different attach will forwarding be working?
+                    if (sendAttach.ID == 0 /*|| sendAttach.BoM == 0*/){
+                        sendAttach = attach;
+                    } 
+                    else {
+                        System.out.println("sID :" + sendAttach.ID);
+                    }
+                    System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
+                    System.out.format("Client at  %s:%d  says: %s%n", sendAttach.clientAddr, sendAttach.ID, msg);
+                    sendAttach.buffer.clear();
+                    byte[] data = msg.getBytes(cs);
+                    sendAttach.buffer.put(data);
+                    sendAttach.buffer.flip();
+                    sendAttach.isRead = false;
+                    sendAttach.buffer.rewind();
+                    //attach.buffer.rewind();
+                    //attach.client.write(sendAttach.buffer, attach, this);
+                    sendAttach.client.write(sendAttach.buffer, sendAttach, this);
+                    
+                    //if write to different attach will forwarding be working?
+                }
             }
             else {
                 attach.isRead = true;
@@ -293,7 +288,7 @@ public class Router
 
             @Override
             public void completed(Integer result, Attachment attach) {
-                Attachment sendAttach = new Attachment();
+               // Attachment sendAttach = new Attachment();
                 if (result == -1){
                     try{
                         routingTable.remove(routingTable.indexOf(attach));
@@ -313,7 +308,7 @@ public class Router
                     attach.buffer.get(bytes, 0, limits);
                     Charset cs = Charset.forName("UTF-8");
                     String msg = new String(bytes, cs);
-                    processMsg(msg);
+                    //processMsg(msg);
                     
                     System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
                     attach.isRead = false;

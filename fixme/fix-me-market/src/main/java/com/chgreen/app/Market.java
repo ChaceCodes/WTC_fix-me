@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
-import java.util.Scanner;
 import java.util.concurrent.Future;
 //import com.chgreen.app.PromptUser;
 
@@ -17,7 +16,6 @@ public class Market
     
     public static void main( String[] args ) throws Exception
     {
-        Scanner scanner = new Scanner(System.in);
         AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
         SocketAddress serverAddr = new InetSocketAddress("localhost", 5001);
         Future<Void> result = channel.connect(serverAddr);
@@ -28,23 +26,15 @@ public class Market
         attach.buffer = ByteBuffer.allocate(2048);
         attach.isRead = true;
         attach.mainThread = Thread.currentThread();
-        scanner.close();
-    while (true){
-            Charset cs = Charset.forName("UTF-8");
-            String msg = scanner.nextLine();
-            byte[] data = msg.getBytes(cs);
-            attach.buffer.put(data);
-            attach.buffer.flip();
-            
         
-            ReadWriteHandler readWriteHandler = new ReadWriteHandler();
-            channel.write(attach.buffer, attach, readWriteHandler);
-            attach.mainThread.join();         
-        }
+        ReadWriteHandler readWriteHandler = new ReadWriteHandler();
+        channel.read(attach.buffer, attach, readWriteHandler);
+        attach.mainThread.join();         
     }
 }
 
 class Attachment {
+    int id;
     AsynchronousSocketChannel channel;
     ByteBuffer buffer;
     Thread mainThread;
@@ -62,16 +52,22 @@ class Attachment {
         byte bytes[] = new byte[limits];
         attach.buffer.get(bytes, 0, limits);
         String msg = new String(bytes, cs);
-        System.out.format("Server Responded: "+ msg);
+
+        if (msg.charAt(1) == 'I')
+        {
+          System.out.println(msg);
+          attach.id = Integer.parseInt(msg.replaceAll("[\\D]", ""));
+        }
+        else{
+          System.out.format("Server Responded: " + msg);
+        
         try {
-          return;
+          
         } catch (Exception e) {
           e.printStackTrace();
         }
-        if (msg.equalsIgnoreCase("bye")) {
-          attach.mainThread.interrupt();
-          return;
-        }
+      }
+        //msg = "test";
         attach.buffer.clear();
         byte[] data = msg.getBytes(cs);
         attach.buffer.put(data);
@@ -87,12 +83,5 @@ class Attachment {
     @Override
     public void failed(Throwable e, Attachment attach) {
       e.printStackTrace();
-    }
-    private String getTextFromUser() throws Exception{
-      System.out.print("Please enter a  message  (Bye  to quit):");
-      BufferedReader consoleReader = new BufferedReader(
-          new InputStreamReader(System.in));
-      String msg = consoleReader.readLine();
-      return msg;
     }
   }

@@ -8,7 +8,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousSocketChannel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
-//import java.util.Scanner;
 import java.util.concurrent.Future;
 import com.chgreen.app.PromptUser;
 
@@ -27,22 +26,14 @@ public class Broker
         attach.buffer = ByteBuffer.allocate(2048);
         attach.isRead = true;
         attach.mainThread = Thread.currentThread();
-    while (true){
-            Charset cs = Charset.forName("UTF-8");
-            String msg = PromptUser.mainPrompt();
-            byte[] data = msg.getBytes(cs);
-            attach.buffer.put(data);
-            attach.buffer.flip();
-            
-        
-            ReadWriteHandler readWriteHandler = new ReadWriteHandler();
-            channel.write(attach.buffer, attach, readWriteHandler);
-            attach.mainThread.join();         
-        }
+        ReadWriteHandler readWriteHandler = new ReadWriteHandler();
+        channel.read(attach.buffer, attach, readWriteHandler);
+        attach.mainThread.join();         
     }
 }
 
 class Attachment {
+    int id;
     AsynchronousSocketChannel channel;
     ByteBuffer buffer;
     Thread mainThread;
@@ -50,6 +41,7 @@ class Attachment {
   }
 
 
+  
   class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
     @Override
     public void completed(Integer result, Attachment attach) {
@@ -60,21 +52,24 @@ class Attachment {
         byte bytes[] = new byte[limits];
         attach.buffer.get(bytes, 0, limits);
         String msg = new String(bytes, cs);
+        if (msg.charAt(1) == 'I')
+        {
+          System.out.println(msg);
+          attach.id = Integer.parseInt(msg.replaceAll("[\\D]", ""));
+        }
+        else{
         System.out.format("Server Responded: "+ msg);
+        }
         try {
-          msg = PromptUser.mainPrompt();
+          msg = PromptUser.mainPrompt(attach.id);
         } catch (Exception e) {
           e.printStackTrace();
-        }
-        if (msg.equalsIgnoreCase("bye")) {
-          attach.mainThread.interrupt();
-          return;
         }
         attach.buffer.clear();
         byte[] data = msg.getBytes(cs);
         attach.buffer.put(data);
         attach.buffer.flip();
-        attach.isRead = true; // It is a write
+        attach.isRead = false; // It is a write
         attach.channel.write(attach.buffer, attach, this);
       }else {
         attach.isRead = true;
@@ -85,12 +80,5 @@ class Attachment {
     @Override
     public void failed(Throwable e, Attachment attach) {
       e.printStackTrace();
-    }
-    private String promptUser() throws Exception{
-      System.out.print("\nPlease enter a  message  (Bye  to quit):");
-      BufferedReader consoleReader = new BufferedReader(
-          new InputStreamReader(System.in));
-      String msg = consoleReader.readLine();
-      return msg;
     }
   }
