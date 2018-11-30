@@ -1,19 +1,14 @@
 package com.chgreen.app;
 
 import java.io.*;
-import java.lang.reflect.Array;
 import java.net.*;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.channels.AsynchronousServerSocketChannel;
 import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.Channel;
 import java.nio.channels.CompletionHandler;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 
 
 public class Router 
@@ -25,9 +20,6 @@ public class Router
     private static ArrayList<Attachment> routingTable;
     private static int IDcurrent;
 
-    /*
-    /
-    */
     public static void main( String[] args ) throws Exception
     {
         IDcurrent = 1000;
@@ -139,12 +131,10 @@ public class Router
 
         @Override
         public void completed(AsynchronousSocketChannel client, Attachment attach) {
-            //int idCurrent = 1000;
                 try{
                     SocketAddress clientAddr = client.getRemoteAddress();
                     System.out.format("Accepted a  connection from  %s%n", clientAddr);
                     attach.server.accept(attach, this);
-                    //ReadWriteHandler rwHandler = new ReadWriteHandler();
                     Attachment newAttach = new Attachment();
 
 
@@ -164,8 +154,7 @@ public class Router
                     cbuf.put("ID:"+ newAttach.ID);
                     cbuf.flip();
 
-                    newAttach.client.write(newAttach.buffer);
-                    //newAttach.client.read(newAttach.buffer, newAttach, rwHandler);           
+                    newAttach.client.write(newAttach.buffer);       
             }
             catch(IOException e){
                 e.printStackTrace();
@@ -214,14 +203,13 @@ public class Router
     }
 
     /*
-    / ReadWriteHandler(s): 
+    / ReadWriteHandler: Handles fix msg, gets ID and forwards if possible otherwise sends the message back to source 
     */
 
     private static class ReadWriteHandler implements CompletionHandler<Integer, Attachment>{
 
         @Override
         public void completed(Integer result, Attachment attach) {
-            //Attachment sendAttach = new Attachment();
             if (result == -1){
                 try{
                     routingTable.remove(routingTable.indexOf(attach));
@@ -256,18 +244,13 @@ public class Router
                         sendAttach = attach;
                     } 
                     System.out.format("Client at  %s:%d  says: %s%n", attach.clientAddr, attach.ID, msg);
-                    System.out.format("Client at  %s:%d  says: %s%n", sendAttach.clientAddr, sendAttach.ID, msg);
                     sendAttach.buffer.clear();
                     byte[] data = msg.getBytes(cs);
                     sendAttach.buffer.put(data);
                     sendAttach.buffer.flip();
                     sendAttach.isRead = false;
                     sendAttach.buffer.rewind();
-                    //attach.buffer.rewind();
-                    //attach.client.write(sendAttach.buffer, attach, this);
                     sendAttach.client.write(sendAttach.buffer, sendAttach, this);
-                    
-                    //if write to different attach will forwarding be working?
                 }
             }
             else {

@@ -1,7 +1,5 @@
 package com.chgreen.app;
 
-// import java.io.BufferedReader;
-// import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -16,7 +14,6 @@ public class Broker
     public static void main( String[] args ) throws Exception
     {
       try{
-        //Scanner scanner = new Scanner(System.in);
         AsynchronousSocketChannel channel = AsynchronousSocketChannel.open();
         SocketAddress serverAddr = new InetSocketAddress("localhost", 5000);
         Future<Void> result = channel.connect(serverAddr);
