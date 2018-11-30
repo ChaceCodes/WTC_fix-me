@@ -67,9 +67,9 @@ class Attachment {
         else{
         System.out.format("Server Responded: "+ msg);
         }
-        try {
-          msg = PromptUser.mainPrompt(attach.id);
+        msg = PromptUser.mainPrompt(attach.id);
         
+        try {
         attach.buffer.clear();
         byte[] data = msg.getBytes(cs);
         attach.buffer.put(data);
@@ -87,6 +87,7 @@ class Attachment {
     }
     @Override
     public void failed(Throwable e, Attachment attach) {
-      e.printStackTrace();
+      System.out.println("Connection Hung up");
+      System.exit(1);
     }
   }

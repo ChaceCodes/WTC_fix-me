@@ -226,7 +226,7 @@ public class Router
                 try{
                     routingTable.remove(routingTable.indexOf(attach));
                     attach.client.close();
-                    System.out.format("Stopped   listening to the   client %s:%d",attach.clientAddr, attach.ID);
+                    System.out.format("Stopped   listening to the   client %s:%d%n",attach.clientAddr, attach.ID);
                     
                 }
                 catch(IOException e){
@@ -280,7 +280,8 @@ public class Router
 
         @Override
         public void failed(Throwable exc, Attachment attach) {
-                exc.printStackTrace();
+            System.out.println("Connection Hung up");
+            System.exit(1);
         }
     }
 }

@@ -96,11 +96,9 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
 
             String sInfo = getSymInfo(sData.instrumentSymbol);
             JSONObject jObj = new JSONObject(sInfo);
-            
+            try{
             String symbolPrice = jObj.getJSONObject("Global Quote").getString("05. price");
             String symbolVolume = jObj.getJSONObject("Global Quote").getString("06. volume");
-
-            
             if (sData.buySell.equalsIgnoreCase("buy")){
               if ((double)sData.price >= Double.parseDouble(symbolPrice) && sData.quantity <= Integer.parseInt(symbolVolume)){
                 sData.status = "accepted";
@@ -111,6 +109,13 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
                 sData.status = "accepted";
               }
             }
+            }
+            catch(JSONException e)
+            {
+             System.out.println("Symbol not found");    
+            }
+            
+            
 
 
 
@@ -136,6 +141,7 @@ class ReadWriteHandler implements CompletionHandler<Integer, Attachment> {
         }
         }
         else{
+          System.out.println("Connection hung up");
           System.exit(0);
         }
       }else {
