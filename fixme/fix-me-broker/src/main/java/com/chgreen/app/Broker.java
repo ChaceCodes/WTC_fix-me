@@ -88,6 +88,6 @@ class Attachment {
     @Override
     public void failed(Throwable e, Attachment attach) {
       System.out.println("Connection Hung up");
-      System.exit(1);
+      System.exit(0);
     }
   }
